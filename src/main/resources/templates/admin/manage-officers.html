@@ -54,6 +54,10 @@
                     Force directive processed successfully.
                 </div>
 
+                <div th:if="${param.error}" class="alert alert-error" style="margin-bottom: 40px; border-color: var(--error); color: var(--error); padding: 15px; border: 1px solid var(--error); background: rgba(239, 68, 68, 0.1);">
+                    <span th:text="${param.error}">Error processing directive.</span>
+                </div>
+
                 <div class="stats-grid" style="grid-template-columns: 1fr 2fr; align-items: start;">
                     <!-- Actions -->
                     <div style="display: flex; flex-direction: column; gap: 40px;">

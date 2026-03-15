@@ -109,8 +109,12 @@ public class AdminController {
             @RequestParam String username,
             @RequestParam String branch,
             @RequestParam String password) {
-        officerManagementService.createOfficer(name, email, username, branch, password);
-        return "redirect:/admin/manage-officers?success=added";
+        try {
+            officerManagementService.createOfficer(name, email, username, branch, password);
+            return "redirect:/admin/manage-officers?success=added";
+        } catch (RuntimeException e) {
+            return "redirect:/admin/manage-officers?error=" + e.getMessage();
+        }
     }
 
     @PostMapping("/manage-officers/delete")

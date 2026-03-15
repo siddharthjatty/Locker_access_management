@@ -29,6 +29,9 @@ public class OfficerManagementService {
         if (officerRepository.existsByUsername(username)) {
             throw new RuntimeException("Username already exists");
         }
+        if (officerRepository.existsByEmail(email)) {
+            throw new RuntimeException("Email already exists");
+        }
         Officer officer = Officer.builder()
                 .name(name)
                 .email(email)

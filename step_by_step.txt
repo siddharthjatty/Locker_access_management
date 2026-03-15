@@ -1,0 +1,95 @@
+=============================================================
+Locker Access Management System - Step-by-Step Guide
+=============================================================
+
+Welcome to the Locker Access Management System!
+This system involves three types of roles. First, here are the default credentials:
+
+DEFAULT SYSTEM CREDENTIALS:
+- Admin Username: admin (Password: password)
+- Officer 1 Username: officer1 (Password: password) [Email: siddharthajatty@gmail.com]
+- Officer 2 Username: officer2 (Password: password) [Email: officer@example.com]
+- Customer Email: (You must click "Register" and create one!)
+
+ROLES OVERVIEW:
+1. Admin: Manages the system, adds lockers, and assigns lockers to customers.
+2. Officer: Bank employee who authorizes a customer's locker access using OTP.
+3. Customer: The end-user who requests access to their assigned locker.
+
+-------------------------------------------------------------
+ROLES AND HOW TO LOGIN
+-------------------------------------------------------------
+To start testing, ensure the Spring Boot application is running (`mvn spring-boot:run`).
+Open your browser and navigate to: http://localhost:8080/login
+
+1. Admin Login (Auto-Generated natively by the system):
+   - Email: admin@example.com
+   - Password: password
+
+2. Officer Login (Auto-Generated natively by the system):
+   - Email: officer@example.com
+   - Password: password
+
+3. Customer Login:
+   - You must create a Customer account manually first!
+   - Click "Register" on the login page or go to: http://localhost:8080/register
+   - IMPORTANT: Use a real email address you have access to so you can receive the OTP!
+   - Once registered, login with the email and password you just created.
+
+-------------------------------------------------------------
+HOW TO ASSIGN LOCKERS (Admin Role)
+-------------------------------------------------------------
+1. Log in as the Admin (admin@example.com).
+2. You will be redirected to the "Manage Lockers" dashboard.
+3. Under "Add New Locker":
+   - Enter a Locker Number (e.g., A-101).
+   - Select the Size and Branch Name.
+   - Click "Register Locker".
+4. Once the locker is added, it will appear in the "Assign Locker" section below it.
+5. In "Assign Locker":
+   - Select the Locker you just created from the dropdown.
+   - Select the Customer you registered earlier from the customer dropdown.
+   - Click "Assign to Customer".
+
+-------------------------------------------------------------
+HOW CAN A CUSTOMER ACCESS THEIR LOCKER? (Customer Role)
+-------------------------------------------------------------
+1. Log in as your newly registered Customer.
+2. On your Dashboard, you will now see the locker assigned to you by the Admin.
+3. Click on "Request Access" to initiate a visit.
+4. Fill out the Date, Time Slot, and Purpose of your visit, then submit.
+5. The system will now send an OTP to your CUSTOMER email address.
+   - Check the inbox (or spam folder) of the email you used to register.
+6. Enter the OTP code on the verification screen to confirm your identity.
+
+-------------------------------------------------------------
+HOW DOES THE OFFICER AUTHORIZE ACCESS? (Officer Role)
+-------------------------------------------------------------
+Because this project involves interacting with two different accounts at the same time, it is HIGHLY RECOMMENDED to use two different browsers or one normal window and one Incognito/Private window.
+
+- Window 1 (Normal): Customer logged in.
+- Window 2 (Incognito): Officer logged in.
+
+Once the customer successfully enters their OTP in Window 1:
+1. Open your Incognito Window (Window 2) and log in as the Officer (officer@example.com).
+2. On the Officer Dashboard, you will see a "Pending Access Requests" table.
+3. The Customer's recent request will appear here with the status "CUSTOMER_VERIFIED".
+4. Click the "Authorize" button next to their request.
+5. The system will immediately send an OTP to the OFFICER.
+   - Wait, where does this OTP go? The Application is configured to print emails to the console during local testing (or via your JavaMailSender config). 
+   - Check the Terminal/Output Console where Spring Boot is running. You will see the Email content printed there or check the officer@example.com inbox if you changed the application.properties to a real SMTP server.
+6. Enter the Officer OTP to officially authorize the Customer's entry.
+
+Once Authorized, the request status changes to "OFFICER_VERIFIED" and the entry time is logged! The Officer can later click "Mark Exited" when the customer leaves.
+
+-------------------------------------------------------------
+HOW TO CHANGE THE OFFICER EMAIL IN THE FUTURE
+-------------------------------------------------------------
+If you want the Officer OTPs to be sent to a different real email address instead of the default one, you can easily update it directly in the database.
+
+1. Open your terminal or MySQL client.
+2. Log into MySQL:
+   `mysql -u root -p<your_password>`
+3. Run the following SQL command to change the officer's email:
+   `UPDATE two_factor_auth_db.officers SET email = 'your_new_email@gmail.com' WHERE id = 1;`
+4. The change is instant! The next time an Officer OTP is generated, it will go to the new email address. You will also use this new email to log into the Officer portal.

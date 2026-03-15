@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Membership | Safeguard</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-body">
+    <div class="auth-container" style="max-width: 520px;">
+        <div class="auth-card fade-in">
+            <div class="auth-header">
+                <h1>Membership</h1>
+                <p>Register your intent for vault access.</p>
+            </div>
+
+            <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+            <form th:action="@{/register}" method="post">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" required class="form-control" placeholder="Johnathan Doe">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" required class="form-control" placeholder="john@heritage.com">
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" required class="form-control" placeholder="jdoe_vault">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="tel" name="phone" required class="form-control" placeholder="+1 (555) 000-0000">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Security Passphrase</label>
+                    <input type="password" name="password" required class="form-control" placeholder="••••••••">
+                </div>
+
+                <div style="margin-top: 40px;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Request</button>
+                    <div style="text-align: center; margin-top: 24px;">
+                        <span style="font-size: 14px; color: var(--text-secondary); opacity: 0.8;">Already a member?</span>
+                        <a th:href="@{/login}" class="auth-link" style="font-size: 14px;">Log In</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Private Client Portal | Safeguard Heritage</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-logo">SAFEGUARD</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/customer/dashboard}" class="nav-link active">Private View</a>
+                <a th:href="@{/customer/request-access}" class="nav-link">Secure Visit</a>
+                <a th:href="@{/customer/report}" class="nav-link">Portfolio View</a>
+            </nav>
+            <div class="sidebar-footer">
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="btn btn-outline" style="width:100%;border:none;padding-left:0;">Sign Out</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content fade-in">
+            <header class="top-bar">
+                <div class="breadcrumb" style="font-size:11px;letter-spacing:0.1em;color:var(--gold);">
+                    PRIVATE CLIENT / <span style="color:var(--text);">OVERVIEW</span>
+                </div>
+                <div class="user-profile">
+                    <span class="script-font" style="font-size:24px;" th:text="${customer.name}">Client Name</span>
+                </div>
+            </header>
+
+            <main class="content-body">
+                <!-- Status Messages -->
+                <div th:if="${param.success}" class="alert alert-success" style="margin-bottom:24px;">
+                    Operation completed successfully.
+                </div>
+                <div th:if="${error}" class="alert alert-error" th:text="${error}" style="margin-bottom:24px;"></div>
+                <div th:if="${info}" class="alert alert-info" th:text="${info}" style="margin-bottom:24px;"></div>
+                <div th:if="${success}" class="alert alert-success" th:text="${success}" style="margin-bottom:24px;"></div>
+
+                <div class="page-header">
+                    <div>
+                        <h2>Portfolio Intelligence</h2>
+                        <p style="color:var(--text-secondary);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;">Overview of your secured assets and heritage.</p>
+                    </div>
+                </div>
+
+                <!-- Portfolio Grid -->
+                <div class="stats-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:40px;">
+                    <div class="stat-card hover-lift" style="padding:48px;">
+                        <div class="stat-label">Secured Holdings</div>
+                        <div class="stat-value" th:text="${#lists.size(lockers)}">0</div>
+                        <p style="font-size:11px;color:var(--gold);margin-top:16px;letter-spacing:0.1em;">ACTIVE VAULTS</p>
+                    </div>
+                    <div class="stat-card hover-lift" style="padding:48px;">
+                        <div class="stat-label">Visit Requests</div>
+                        <div class="stat-value" th:text="${#lists.size(requests)}">0</div>
+                        <p style="font-size:11px;color:var(--gold);margin-top:16px;letter-spacing:0.1em;">THIS SESSION</p>
+                    </div>
+                </div>
+
+                <!-- Section: Vaults & Visits -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;">
+                    <!-- My Vaults -->
+                    <div class="table-card">
+                        <div class="table-header" style="padding:24px;border-bottom:1px solid var(--border);">
+                            <h3 style="font-size:14px;letter-spacing:0.1em;">VAULT REGISTRY</h3>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Vault #</th>
+                                    <th>Station</th>
+                                    <th>Dimension</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="locker : ${lockers}">
+                                    <td th:text="${locker.lockerNumber}" style="font-family:var(--serif);font-weight:500;"></td>
+                                    <td th:text="${locker.branch}"></td>
+                                    <td th:text="${locker.size}"></td>
+                                    <td>
+                                        <form th:action="@{/customer/request-unassign}" method="post">
+                                            <input type="hidden" name="lockerId" th:value="${locker.id}">
+                                            <button type="submit" class="auth-link" style="border:none;background:none;font-size:11px;text-transform:uppercase;cursor:pointer;color:var(--error);" onclick="return confirm('Request vault unassignment?')">Unassign</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(lockers)}">
+                                    <td colspan="4" style="text-align:center;color:var(--text-secondary);padding:40px;">No vaults in portfolio.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Recent Visits -->
+                    <div class="table-card">
+                        <div class="table-header" style="padding:24px;border-bottom:1px solid var(--border);">
+                            <h3 style="font-size:14px;letter-spacing:0.1em;">RECENT VISITS</h3>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Vault</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="req : ${requests}">
+                                    <td th:text="${req.locker != null ? req.locker.lockerNumber : '—'}"></td>
+                                    <td th:text="${req.createdAt != null ? #temporals.format(req.createdAt,'dd MMM') : '—'}"></td>
+                                    <td>
+                                        <span class="badge" th:classappend="${req.status != null and req.status.name() == 'COMPLETED' ? 'badge-success' : 'badge-warning'}" th:text="${req.status}"></span>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(requests)}">
+                                    <td colspan="3" style="text-align:center;color:var(--text-secondary);padding:40px;">No visits logged.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Section: Account Settings & Allocation -->
+                <div style="display:grid;grid-template-columns:2fr 3fr;gap:40px;margin-top:40px;">
+                    
+                    <!-- Allocation Request -->
+                    <div class="stat-card" style="text-align:left;padding:32px;" th:if="${pendingAllocation == null}">
+                        <h3 style="font-size:14px;color:var(--gold);margin-bottom:24px;letter-spacing:0.1em;">NEW VAULT PETITION</h3>
+                        <form th:action="@{/customer/request-allocation}" method="post">
+                            <div class="form-group">
+                                <label class="form-label">Dimensions</label>
+                                <select name="size" class="form-control" required>
+                                    <option value="SMALL">Personal</option>
+                                    <option value="MEDIUM">Executive</option>
+                                    <option value="LARGE">Institutional</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width:100%;">Submit Petition</button>
+                        </form>
+                    </div>
+                    <div th:if="${pendingAllocation}" class="stat-card" style="text-align:left;padding:32px;">
+                        <h3 style="font-size:14px;color:var(--gold);margin-bottom:16px;letter-spacing:0.1em;">PENDING ALLOCATION</h3>
+                        <p style="font-size:13px;line-height:1.6;color:var(--text-secondary);">Your request for a <strong th:text="${pendingAllocation.requestedSize}"></strong> vault is currently being reviewed by the heritage board.</p>
+                    </div>
+
+                    <!-- Identity & Security Management -->
+                    <div class="table-card" style="padding:32px;">
+                        <h3 style="font-size:14px;letter-spacing:0.1em;margin-bottom:24px;">ACCOUNT PROTOCOLS</h3>
+                        
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+                            <!-- Change Username -->
+                            <div>
+                                <h4 style="font-size:12px;color:var(--gold);margin-bottom:16px;">IDENTITY HANDLE</h4>
+                                <form th:action="@{/customer/change-username}" method="post">
+                                    <div class="form-group" style="margin-bottom:12px;">
+                                        <input type="text" name="newUsername" class="form-control" style="padding:10px;font-size:13px;" th:value="${customer.username}" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-outline" style="padding:8px;font-size:11px;width:100%;">Update Handle</button>
+                                </form>
+                            </div>
+
+                            <!-- Change Password -->
+                            <div>
+                                <h4 style="font-size:12px;color:var(--gold);margin-bottom:16px;">PASSPHRASE PROTOCOL</h4>
+                                <!-- Step 1: Request OTP -->
+                                <form th:action="@{/customer/request-password-change}" method="post" th:if="${info == null}">
+                                    <p style="font-size:11px;color:var(--text-secondary);margin-bottom:12px;line-height:1.4;">Request a secure clearance code to update your passphrase.</p>
+                                    <button type="submit" class="btn btn-outline" style="padding:8px;font-size:11px;width:100%;">Initiate Recovery</button>
+                                </form>
+                                
+                                <!-- Step 2: Submit OTP & New Password -->
+                                <form th:action="@{/customer/change-password}" method="post" th:if="${info != null}">
+                                    <div class="form-group" style="margin-bottom:10px;">
+                                        <input type="text" name="otp" class="form-control" style="padding:8px;font-size:12px;" placeholder="Verification Code" required>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:12px;">
+                                        <input type="password" name="newPassword" class="form-control" style="padding:8px;font-size:12px;" placeholder="New Passphrase" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="padding:8px;font-size:11px;width:100%;">Confirm Update</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+</body>
+</html>

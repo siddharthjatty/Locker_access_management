@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identity Verification | Safeguard Heritage</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card fade-in">
+            <div class="auth-header">
+                <p style="letter-spacing:0.2em;margin-bottom:20px;font-size:11px;">SECURITY PROTOCOL</p>
+                <h1>Vault Clearance</h1>
+                <p>Submit the one-time clearance code sent to the client to authorize entrance.</p>
+            </div>
+
+            <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+            <div th:if="${param.success}" class="alert alert-success">OTP resent to client.</div>
+
+            <form th:action="@{/officer/verify-otp}" method="post">
+                <input type="hidden" name="reqId" th:value="${reqId}">
+                
+                <div class="form-group">
+                    <label class="form-label">Clearance Code (OTP)</label>
+                    <input type="text" name="otp" required autofocus class="form-control" placeholder="6-Digit Code" style="text-align:center;letter-spacing:0.5em;font-size:24px;" maxlength="6">
+                </div>
+
+                <div style="margin-top:40px;">
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Authorize Access</button>
+                    <div style="text-align:center;margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+                        <a th:href="@{/officer/resend-otp(reqId=${reqId})}" class="auth-link" style="font-size:13px;">Resend Code to Client</a>
+                        <a th:href="@{/officer/dashboard}" class="auth-link" style="font-size:13px;opacity:0.8;">Return to Station</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,118 @@
+========================================================
+  Two-Factor Authentication Project - Command Reference
+========================================================
+
+---------- STARTING THE PROJECT ----------
+
+# 1. Start the application (first time or clean start)
+mvn clean spring-boot:run
+
+# 2. Start the application (quick start, no clean)
+mvn spring-boot:run
+
+# 3. Start with specific profile
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+
+---------- STOPPING THE PROJECT ----------
+
+# 1. Stop the running application
+Press Ctrl + C in the terminal where the app is running
+
+# 2. Force kill if port 8080 is stuck
+lsof -i :8080
+kill -9 <PID>
+
+lsof -ti:8080 | xargs kill -9
+
+
+
+---------- BUILD COMMANDS ----------
+
+# 1. Compile the project (check for errors)
+mvn compile
+
+# 2. Clean and compile
+mvn clean compile
+
+# 3. Build JAR file (production)
+mvn clean package -DskipTests
+
+# 4. Run the JAR file
+java -jar target/two-factor-auth-1.0.0.jar
+
+
+---------- DATABASE COMMANDS ----------
+
+# 1. Login to MySQL
+mysql -u root -pS1ddharth@321
+
+# 2. Create database (auto-created by app, but manual if needed)
+CREATE DATABASE two_factor_auth_db;
+
+# 3. Use the database
+USE two_factor_auth_db;
+
+# 4. View tables
+SHOW TABLES;
+
+# 5. View users
+SELECT * FROM users;
+
+# 6. View OTP tokens
+SELECT * FROM otp_tokens;
+
+# 7. Drop database (CAUTION - deletes all data)
+DROP DATABASE two_factor_auth_db;
+
+
+---------- USEFUL URLs ----------
+
+# Login Page
+http://localhost:8080
+
+# Register Page
+http://localhost:8080/register.html
+
+# OTP Verification Page
+http://localhost:8080/otp.html
+
+# Dashboard (after login)
+http://localhost:8080/dashboard.html
+
+
+---------- API ENDPOINTS (for Postman/curl) ----------
+
+# Register a new user
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"fullName":"John Doe","email":"john@example.com","password":"pass123"}'
+
+# Login (sends OTP to email)
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","password":"pass123"}'
+
+# Verify OTP (returns JWT token)
+curl -X POST http://localhost:8080/api/auth/verify-otp \
+  -H "Content-Type: application/json" \
+  -d '{"email":"john@example.com","otp":"123456"}'
+
+
+---------- TROUBLESHOOTING ----------
+
+# If tables are missing, change in application.properties:
+spring.jpa.hibernate.ddl-auto=create
+# Then restart. After tables are created, change back to:
+spring.jpa.hibernate.ddl-auto=update
+
+# If port 8080 is already in use:
+lsof -i :8080
+kill -9 <PID>
+
+# If MySQL is not running:
+brew services start mysql
+
+# If email sending fails:
+# Update Gmail SMTP credentials in application.properties
+# Make sure you're using a Gmail App Password, not your regular password

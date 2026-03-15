@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter the Vault | Safeguard Heritage</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card fade-in">
+            <div class="auth-header">
+                <div class="script-font" style="font-size:32px;color:var(--gold);margin-bottom:8px;">Safeguard</div>
+                <h1>Enter the Vault</h1>
+                <p>Verify your credentials to access your heritage portfolio.</p>
+            </div>
+
+            <div th:if="${param.error}" class="alert alert-error">
+                Invalid credentials. Please verify your identity and try again.
+            </div>
+            <div th:if="${param.logout}" class="alert alert-info">
+                You have been securely signed out of the institution.
+            </div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="form-group">
+                    <label class="form-label">Username</label>
+                    <input type="text" name="username" required autofocus class="form-control" placeholder="Your username">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" required class="form-control" placeholder="••••••••">
+                </div>
+                
+                <div style="margin-top:40px;">
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Authenticate Access</button>
+                    <div style="text-align:center;margin-top:24px;">
+                        <a th:href="@{/change-password/step1}" class="auth-link" style="font-size:13px;opacity:0.8;">Forgot Password?</a>
+                    </div>
+                </div>
+            </form>
+
+            <div class="auth-footer">
+                New to Safeguard? <a th:href="@{/register}" class="auth-link">Create an Account</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

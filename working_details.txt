@@ -1,0 +1,551 @@
+================================================================================
+        TWO-FACTOR AUTHENTICATION (2FA) PROJECT — COMPLETE WORKING DETAILS
+================================================================================
+
+This document explains how the entire 2FA project works, step by step,
+from the moment a user opens the website to the moment they are logged in.
+Written for beginners — no detail is skipped.
+
+
+================================================================================
+SECTION 1: WHAT IS TWO-FACTOR AUTHENTICATION (2FA)?
+================================================================================
+
+Normally, you log in with just a username and password. But what if someone
+steals your password? They can access your account!
+
+Two-Factor Authentication (2FA) adds a SECOND layer of security:
+  1st Factor: Something you KNOW → your password
+  2nd Factor: Something you HAVE → a code sent to your email/phone
+
+Even if someone steals your password, they can't log in without the OTP
+(One-Time Password) sent to your email.
+
+
+================================================================================
+SECTION 2: TECH STACK — WHAT TECHNOLOGIES ARE USED?
+================================================================================
+
+1. SPRING BOOT (v2.7.18)
+   - A Java framework that makes it easy to build web applications
+   - It sets up a web server (Tomcat) automatically
+   - Runs on port 8080 (http://localhost:8080)
+
+2. SPRING SECURITY
+   - Handles authentication (who are you?) and authorization (what can you do?)
+   - Manages the security filter chain that protects our endpoints
+   - We configure it to allow public access to login/register pages
+     but block access to protected pages without a valid JWT token
+
+3. MySQL DATABASE
+   - Stores user data (email, hashed password, name)
+   - Stores OTP tokens (the 6-digit code, expiry time, used/not used)
+   - Database name: two_factor_auth_db
+   - Two tables: "users" and "otp_tokens"
+
+4. BCrypt PASSWORD HASHING
+   - We NEVER store passwords as plain text (e.g., "mypassword123")
+   - BCrypt converts "mypassword123" into something like:
+     "$2a$12$LJ3m4ys..." (a long scrambled string)
+   - Even if a hacker gets the database, they can't read passwords
+   - Strength level: 12 (higher = more secure but slower)
+
+5. JavaMail (Gmail SMTP)
+   - Used to send OTP emails to users
+   - Connects to Gmail's SMTP server (smtp.gmail.com, port 587)
+   - Uses TLS encryption for secure email sending
+   - Requires a Gmail App Password (not your regular Gmail password)
+
+6. JWT (JSON Web Token)
+   - After successful 2FA login, the server creates a JWT token
+   - This token is like a "digital ID card" — it proves you're logged in
+   - The token contains: your email, issue time, expiry time
+   - It's signed with a secret key so no one can forge it
+   - Token expires after 1 hour (3600000 milliseconds)
+
+7. Lombok
+   - A Java library that reduces code
+   - Instead of writing getters, setters, constructors manually,
+     we use annotations like @Data, @Builder, @NoArgsConstructor
+
+
+================================================================================
+SECTION 3: PROJECT FILE STRUCTURE — WHAT EACH FILE DOES
+================================================================================
+
+TT_Project_2FA/
+│
+├── pom.xml                          ← Maven config (lists all dependencies)
+├── start_stop_project.txt           ← Commands to start/stop the project
+├── working_details.txt              ← This file!
+│
+└── src/main/
+    ├── java/com/tt/auth/
+    │   │
+    │   ├── TwoFactorAuthApplication.java    ← ENTRY POINT (main method)
+    │   │   Spring Boot starts here. It boots up Tomcat web server,
+    │   │   connects to MySQL, and starts listening on port 8080.
+    │   │
+    │   ├── entity/                          ← DATABASE TABLE DEFINITIONS
+    │   │   ├── User.java                    ← Maps to "users" table
+    │   │   │   Fields: id, email, password (hashed), fullName, enabled, createdAt
+    │   │   │
+    │   │   └── OtpToken.java                ← Maps to "otp_tokens" table
+    │   │       Fields: id, otp (6-digit code), expiresAt, used (true/false),
+    │   │               createdAt, user (foreign key to users table)
+    │   │
+    │   ├── repository/                      ← DATABASE QUERY INTERFACES
+    │   │   ├── UserRepository.java          ← Find user by email, check if exists
+    │   │   └── OtpRepository.java           ← Find latest unused OTP, invalidate old OTPs
+    │   │
+    │   ├── dto/                             ← DATA TRANSFER OBJECTS (request/response shapes)
+    │   │   ├── LoginRequest.java            ← { email, password }
+    │   │   ├── OtpVerifyRequest.java        ← { email, otp }
+    │   │   ├── RegisterRequest.java         ← { fullName, email, password }
+    │   │   └── AuthResponse.java            ← { success, message, token, email }
+    │   │
+    │   ├── service/                         ← BUSINESS LOGIC
+    │   │   ├── AuthService.java             ← Main orchestrator of the 2FA flow
+    │   │   ├── OtpService.java              ← Generate & validate OTPs
+    │   │   ├── EmailService.java            ← Send OTP emails via Gmail
+    │   │   ├── JwtService.java              ← Create & validate JWT tokens
+    │   │   └── CustomUserDetailsService.java ← Loads user from DB for Spring Security
+    │   │
+    │   ├── config/                          ← SECURITY CONFIGURATION
+    │   │   ├── SecurityConfig.java          ← Which URLs are public vs protected
+    │   │   └── JwtAuthFilter.java           ← Checks JWT token on every request
+    │   │
+    │   ├── controller/                      ← API ENDPOINTS
+    │   │   └── AuthController.java          ← /api/auth/login, /verify-otp, /register
+    │   │
+    │   └── exception/                       ← ERROR HANDLING
+    │       └── GlobalExceptionHandler.java  ← Catches errors, returns clean JSON
+    │
+    └── resources/
+        ├── application.properties           ← All configuration (DB, email, JWT, OTP)
+        └── static/                          ← FRONTEND FILES (HTML/CSS/JS)
+            ├── index.html                   ← Login page
+            ├── otp.html                     ← OTP verification page
+            ├── dashboard.html               ← Success/dashboard page
+            ├── register.html                ← Registration page
+            ├── css/style.css                ← All styling (Google-inspired design)
+            └── js/app.js                    ← Shared JavaScript utilities
+
+
+================================================================================
+SECTION 4: THE COMPLETE AUTHENTICATION FLOW — STEP BY STEP
+================================================================================
+
+Here is EXACTLY what happens when a user uses the application:
+
+
+--- PHASE 1: USER REGISTRATION ---
+
+Step 1: User opens http://localhost:8080/register.html
+        → Browser loads register.html from static/ folder
+        → CSS and JS files are loaded
+
+Step 2: User fills in: Full Name, Email, Password
+        → Example: "Siddu", "siddu@gmail.com", "mypass123"
+
+Step 3: User clicks "Next" button
+        → JavaScript captures the form data
+        → Sends a POST request to: /api/auth/register
+        → Request body: { fullName: "Siddu", email: "siddu@gmail.com", password: "mypass123" }
+
+Step 4: AuthController.register() receives the request
+        → @Valid annotation checks validation rules:
+          - fullName must not be blank
+          - email must be valid format
+          - password must be at least 6 characters
+        → If validation fails, GlobalExceptionHandler returns error
+
+Step 5: AuthService.register() is called
+        → First checks: Does this email already exist in the database?
+        → UserRepository.existsByEmail("siddu@gmail.com")
+        → If yes → returns error "Email already registered"
+
+Step 6: Password is hashed with BCrypt
+        → passwordEncoder.encode("mypass123")
+        → Produces something like: "$2a$12$xK9v2m..."
+        → The original password is NEVER stored
+
+Step 7: New User object is created and saved to MySQL
+        → User { fullName="Siddu", email="siddu@gmail.com", password="$2a$12$xK9v2m..." }
+        → UserRepository.save(user) → INSERT INTO users VALUES (...)
+        → MySQL assigns auto-increment ID (e.g., id=1)
+
+Step 8: Success response returned
+        → { success: true, message: "Registration successful! You can now login." }
+        → JavaScript shows green success alert
+        → After 1.5 seconds, redirects to login page (/)
+
+
+--- PHASE 2: USER LOGIN (PASSWORD VERIFICATION + OTP GENERATION) ---
+
+Step 9: User opens http://localhost:8080 (login page)
+        → Browser loads index.html
+
+Step 10: User enters Email and Password, clicks "Next"
+         → JavaScript sends POST to: /api/auth/login
+         → Body: { email: "siddu@gmail.com", password: "mypass123" }
+
+Step 11: AuthController.login() receives the request
+         → Passes it to AuthService.login()
+
+Step 12: AuthService looks up the user in MySQL
+         → UserRepository.findByEmail("siddu@gmail.com")
+         → SQL: SELECT * FROM users WHERE email = 'siddu@gmail.com'
+         → If user not found → returns "Invalid email or password"
+
+Step 13: Password is verified with BCrypt
+         → passwordEncoder.matches("mypass123", "$2a$12$xK9v2m...")
+         → BCrypt hashes "mypass123" and compares with stored hash
+         → If they DON'T match → returns "Invalid email or password"
+         → If they DO match → proceed to OTP step!
+
+         NOTE: We return the SAME error message for wrong email AND wrong
+         password. This is a SECURITY BEST PRACTICE — it prevents attackers
+         from figuring out which emails are registered.
+
+Step 14: OTP Generation (OtpService.generateOtp())
+         → First, invalidate ALL previous unused OTPs for this user
+           SQL: UPDATE otp_tokens SET is_used=1 WHERE user_id=1 AND is_used=0
+           (This prevents old OTPs from being valid)
+
+         → Generate a random 6-digit number using SecureRandom
+           Example: 847293
+           SecureRandom is cryptographically secure (harder to predict than Random)
+
+         → Calculate expiry time: current time + 5 minutes
+           Example: If now is 10:30 PM, expiry = 10:35 PM
+
+         → Save OTP to database:
+           OtpToken { otp="847293", expiresAt=10:35PM, used=false, user_id=1 }
+           SQL: INSERT INTO otp_tokens VALUES (...)
+
+Step 15: OTP Email is sent (EmailService.sendOtpEmail())
+         → Creates a MimeMessage (HTML email)
+         → Sets From: siddharthajatty@gmail.com (your configured email)
+         → Sets To: siddu@gmail.com (the user's email)
+         → Sets Subject: "Your Two-Factor Authentication Code"
+         → Body is a beautiful HTML template with:
+           - Purple gradient header
+           - The 6-digit OTP code in large font
+           - Warning that it expires in 5 minutes
+         → JavaMailSender connects to smtp.gmail.com:587
+         → Authenticates with your Gmail App Password
+         → Sends the email via TLS encryption
+
+Step 16: Success response returned to browser
+         → { success: true, message: "OTP has been sent to your email...", email: "siddu@gmail.com" }
+         → JavaScript stores the email in sessionStorage
+         → After 1.2 seconds, redirects to /otp.html
+
+
+--- PHASE 3: OTP VERIFICATION + JWT TOKEN ISSUANCE ---
+
+Step 17: OTP page loads (otp.html)
+         → JavaScript checks: is there an email in sessionStorage?
+         → If NO → redirects back to login (prevents direct access)
+         → If YES → shows the email and 6 OTP input boxes
+         → A 5-minute countdown timer starts (300 seconds)
+         → First input box is auto-focused
+
+Step 18: User checks their email inbox
+         → Finds the email from siddharthajatty@gmail.com
+         → Subject: "Your Two-Factor Authentication Code"
+         → Sees the 6-digit code (e.g., 847293)
+
+Step 19: User enters the 6-digit OTP
+         → Can type one digit at a time (auto-moves to next box)
+         → Can paste the full 6-digit code (auto-fills all boxes)
+         → Each filled box gets a blue highlight animation
+
+Step 20: User clicks "Verify"
+         → JavaScript collects all 6 digits: "847293"
+         → Sends POST to: /api/auth/verify-otp
+         → Body: { email: "siddu@gmail.com", otp: "847293" }
+
+Step 21: AuthController.verifyOtp() receives the request
+         → Passes to AuthService.verifyOtp()
+
+Step 22: AuthService looks up the user again
+         → UserRepository.findByEmail("siddu@gmail.com")
+         → If user not found → returns "User not found"
+
+Step 23: OTP Validation (OtpService.validateOtp())
+         → Finds the latest UNUSED OTP for this user:
+           SQL: SELECT * FROM otp_tokens
+                WHERE user_id=1 AND is_used=0
+                ORDER BY created_at DESC LIMIT 1
+
+         → If no unused OTP found → returns false ("No active OTP")
+
+         → Checks EXPIRATION:
+           Is current time AFTER expiresAt?
+           If now is 10:36 PM and expiry is 10:35 PM → EXPIRED!
+           Marks OTP as used, returns false
+
+         → Checks OTP MATCH:
+           Does "847293" equal the stored OTP "847293"?
+           If NO → returns false ("Invalid OTP")
+           If YES → marks OTP as used (is_used = true), returns true
+
+Step 24: DECISION POINT — OTP Valid?
+
+         ✗ NO / EXPIRED:
+           → Returns: { success: false, message: "Invalid or expired OTP. Access denied." }
+           → HTTP Status: 401 (Unauthorized)
+           → JavaScript shows red error alert
+           → OTP input boxes turn red, then clear
+           → User must try again or go back to login for a new OTP
+
+         ✓ YES (OTP is valid and not expired):
+           → Proceed to JWT token generation!
+
+Step 25: JWT Token Generation (JwtService.generateToken())
+         → Creates a JWT token with:
+           - Subject: "siddu@gmail.com" (the user's email)
+           - Issued At: current timestamp
+           - Expiration: current time + 1 hour
+           - Signed with: HMAC-SHA256 using the secret key from application.properties
+         → Token looks like: "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJz..."
+           (Three parts separated by dots: Header.Payload.Signature)
+
+Step 26: Success response returned
+         → { success: true, message: "Login successful!", token: "eyJhbG...", email: "siddu@gmail.com" }
+         → JavaScript stores the JWT token in sessionStorage
+         → Shows green success alert
+         → Step indicators turn green (all 3 dots completed)
+         → After 1.2 seconds, redirects to /dashboard.html
+
+
+--- PHASE 4: DASHBOARD (AUTHENTICATED AREA) ---
+
+Step 27: Dashboard page loads (dashboard.html)
+         → JavaScript checks: is there a token in sessionStorage?
+         → If NO → redirects to login
+         → If YES → displays the dashboard
+
+Step 28: Dashboard shows:
+         → Green checkmark animation (success!)
+         → "Welcome!" message
+         → User's email address
+         → The full JWT token (can be copied)
+         → A summary of all authentication steps completed
+         → Tech stack badges
+         → Sign out button
+
+Step 29: Sign out
+         → Clears all sessionStorage data (token, email)
+         → Redirects to login page
+
+
+================================================================================
+SECTION 5: HOW SPRING SECURITY PROTECTS THE APP
+================================================================================
+
+Every single HTTP request goes through a SECURITY FILTER CHAIN:
+
+   Request → DisableEncodeUrlFilter
+           → SecurityContextPersistenceFilter
+           → HeaderWriterFilter
+           → LogoutFilter
+           → JwtAuthFilter  ← OUR CUSTOM FILTER
+           → AnonymousAuthenticationFilter
+           → SessionManagementFilter
+           → ExceptionTranslationFilter
+           → FilterSecurityInterceptor
+           → Your Controller
+
+HOW JwtAuthFilter WORKS:
+1. Checks if the request has an "Authorization" header
+2. If NO header → lets the request through (might be a public page)
+3. If YES header → extracts the JWT token after "Bearer "
+4. Decodes the token and extracts the email
+5. Verifies: is the token valid? Is it expired?
+6. If valid → creates an Authentication object and puts it in SecurityContext
+7. Now Spring Security knows this user is authenticated
+
+WHICH URLS ARE PUBLIC (no login needed):
+  /api/auth/**        → login, register, verify-otp
+  /                   → home page
+  /index.html         → login page
+  /otp.html           → OTP page
+  /dashboard.html     → dashboard page
+  /register.html      → register page
+  /css/**             → stylesheets
+  /js/**              → scripts
+
+WHICH URLS ARE PROTECTED (need valid JWT):
+  /api/protected/**   → any protected API endpoints
+
+
+================================================================================
+SECTION 6: DATABASE TABLES — WHAT'S STORED
+================================================================================
+
+TABLE: users
++----+---------------------+---------------------+----------+------------+--------------------------------------------------------------+
+| id | created_at          | email               | is_enabled| full_name  | password                                                     |
++----+---------------------+---------------------+----------+------------+--------------------------------------------------------------+
+| 1  | 2024-01-01 10:00:00 | siddu@gmail.com     | 1        | Siddu      | $2a$12$xK9v2mLkJ8... (BCrypt hash, NOT plain text!)        |
++----+---------------------+---------------------+----------+------------+--------------------------------------------------------------+
+
+TABLE: otp_tokens
++----+---------------------+---------------------+--------+---------+---------+
+| id | created_at          | expires_at          | otp    | is_used | user_id |
++----+---------------------+---------------------+--------+---------+---------+
+| 1  | 2024-01-01 10:30:00 | 2024-01-01 10:35:00 | 847293 | 1       | 1       |
+| 2  | 2024-01-01 11:00:00 | 2024-01-01 11:05:00 | 293847 | 0       | 1       |
++----+---------------------+---------------------+--------+---------+---------+
+
+Note: is_used=1 means the OTP has been used or invalidated
+      is_used=0 means the OTP is still active (if not expired)
+
+
+================================================================================
+SECTION 7: CONFIGURATION FILE (application.properties) EXPLAINED
+================================================================================
+
+# Server runs on port 8080
+server.port=8080
+
+# MySQL Connection
+spring.datasource.url=jdbc:mysql://localhost:3306/two_factor_auth_db
+  → Connects to MySQL running on your computer, database: two_factor_auth_db
+  → createDatabaseIfNotExist=true → creates the DB if it doesn't exist
+
+spring.datasource.username=root
+spring.datasource.password=S1ddharth@321
+
+# Hibernate (ORM - converts Java objects to database tables)
+spring.jpa.hibernate.ddl-auto=update
+  → "update" means: if tables don't match entities, ALTER them
+  → "create" means: DROP and recreate tables every time (loses data!)
+
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+  → Tells Hibernate to generate MySQL 8 compatible SQL
+
+# Gmail SMTP (for sending OTP emails)
+spring.mail.host=smtp.gmail.com                → Gmail's mail server
+spring.mail.port=587                           → SMTP port with TLS
+spring.mail.username=siddharthajatty@gmail.com → Your Gmail address
+spring.mail.password=wsxuekafysadukyj          → Gmail App Password (NOT regular password)
+
+# JWT Configuration
+app.jwt.secret=YourSuperSecretKey...  → Secret key to sign JWT tokens
+app.jwt.expiration-ms=3600000         → Token expires in 1 hour (in milliseconds)
+
+# OTP Configuration
+app.otp.expiration-minutes=5          → OTP expires in 5 minutes
+app.otp.length=6                      → OTP is 6 digits long
+
+
+================================================================================
+SECTION 8: WHAT HAPPENS IF SOMETHING GOES WRONG?
+================================================================================
+
+1. WRONG PASSWORD:
+   → BCrypt comparison fails
+   → Returns "Invalid email or password"
+   → No OTP is generated
+
+2. WRONG OTP:
+   → OTP string comparison fails
+   → Returns "Invalid or expired OTP. Access denied."
+   → User can try again (OTP is NOT marked as used)
+
+3. EXPIRED OTP (after 5 minutes):
+   → LocalDateTime.now().isAfter(expiresAt) returns true
+   → OTP is marked as used
+   → Returns "Invalid or expired OTP. Access denied."
+   → User must go back to login page and get a new OTP
+
+4. EMAIL NOT REGISTERED:
+   → UserRepository.findByEmail() returns empty
+   → Returns "Invalid email or password" (same message for security)
+
+5. EMAIL ALREADY REGISTERED:
+   → UserRepository.existsByEmail() returns true
+   → Returns "Email already registered"
+
+6. EMAIL SENDING FAILS:
+   → Could be wrong SMTP credentials
+   → Could be Gmail App Password expired
+   → RuntimeException is thrown
+   → GlobalExceptionHandler catches it
+   → Returns error message to user
+
+7. INVALID JWT TOKEN:
+   → JwtAuthFilter catches the exception
+   → SecurityContext is NOT set
+   → Request is treated as unauthenticated
+
+
+================================================================================
+SECTION 9: VISUAL FLOW DIAGRAM (ASCII)
+================================================================================
+
+    [User Opens Login Page]
+            |
+            v
+    [Enters Email & Password]
+            |
+            v
+    [POST /api/auth/login]
+            |
+            v
+    [Find User in MySQL] ──── NOT FOUND ──→ [Error: Invalid credentials]
+            |
+          FOUND
+            |
+            v
+    [BCrypt: Compare Password] ── MISMATCH ──→ [Error: Invalid credentials]
+            |
+          MATCH ✓
+            |
+            v
+    [Generate 6-digit OTP]
+    [Save to MySQL with 5min expiry]
+            |
+            v
+    [Send OTP via Gmail SMTP]
+            |
+            v
+    [User Checks Email]
+    [Enters 6-digit OTP]
+            |
+            v
+    [POST /api/auth/verify-otp]
+            |
+            v
+    [Find Latest Unused OTP] ── NOT FOUND ──→ [Error: No active OTP]
+            |
+          FOUND
+            |
+            v
+    [Check Expiry] ── EXPIRED ──→ [Error: OTP expired]
+            |
+        NOT EXPIRED
+            |
+            v
+    [Compare OTP] ── MISMATCH ──→ [Error: Invalid OTP]
+            |
+          MATCH ✓
+            |
+            v
+    [Mark OTP as Used]
+    [Generate JWT Token]
+            |
+            v
+    [Return JWT to Browser]
+            |
+            v
+    [Dashboard: User is Logged In! 🎉]
+
+
+================================================================================
+END OF DOCUMENT
+================================================================================

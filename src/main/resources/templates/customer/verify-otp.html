@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identity Authorization | Safeguard Heritage</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body class="auth-body">
+    <div class="auth-container">
+        <div class="auth-card fade-in">
+            <div class="auth-header">
+                <p style="letter-spacing:0.2em;margin-bottom:20px;font-size:11px;">IDENTITY PROTOCOL</p>
+                <h1>Vault Clearance</h1>
+                <p>Authorize your station visit by submitting the clearance code sent to your registered device.</p>
+            </div>
+
+            <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+            <div th:if="${param.success}" class="alert alert-success">OTP resent to your registered email.</div>
+
+            <form th:action="@{/customer/verify-otp}" method="post">
+                <input type="hidden" name="reqId" th:value="${reqId}">
+                
+                <div class="form-group">
+                    <label class="form-label">Clearance Code (OTP)</label>
+                    <input type="text" name="otp" required autofocus class="form-control" placeholder="6-Digit Code" style="text-align:center;letter-spacing:0.5em;font-size:24px;" maxlength="6">
+                </div>
+
+                <div style="margin-top:40px;">
+                    <button type="submit" class="btn btn-primary" style="width:100%;">Authorize Clearance</button>
+                    <div style="text-align:center;margin-top:24px;display:flex;flex-direction:column;gap:12px;">
+                        <a th:href="@{/customer/resend-otp(reqId=${reqId})}" class="auth-link" style="font-size:13px;">Resend Code</a>
+                        <a th:href="@{/customer/dashboard}" class="auth-link" style="font-size:13px;opacity:0.8;">Return to Portfolio</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

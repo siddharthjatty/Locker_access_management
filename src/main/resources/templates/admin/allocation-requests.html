@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Petitions | Safeguard Heritage</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <div class="sidebar">
+            <div class="sidebar-logo">SAFEGUARD</div>
+            <nav class="sidebar-nav">
+                <a th:href="@{/admin/dashboard}" class="nav-link">Intelligence</a>
+                <a th:href="@{/admin/manage-lockers}" class="nav-link">Locker Registry</a>
+                <a th:href="@{/admin/manage-officers}" class="nav-link">Officer Command</a>
+                <a th:href="@{/admin/allocation-requests}" class="nav-link active">Access Petitions</a>
+                <a th:href="@{/admin/audit-logs}" class="nav-link">Heritage Logs</a>
+            </nav>
+            <div class="sidebar-footer">
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit" class="btn btn-outline" style="width:100%;border:none;padding-left:0;">Sign Out</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="main-content fade-in">
+            <header class="top-bar">
+                <div class="breadcrumb" style="font-size:11px;letter-spacing:0.1em;color:var(--gold);">
+                    ADMINISTRATION / <span style="color:var(--text);">ACCESS PETITIONS</span>
+                </div>
+                <div class="user-profile">
+                    <span class="script-font" style="font-size:24px;">Administrator</span>
+                </div>
+            </header>
+
+            <main class="content-body">
+                <div class="page-header">
+                    <div>
+                        <h2>Client Petitions</h2>
+                        <p style="color:var(--text-secondary);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;">Review and adjudicate formal vault allocation requests.</p>
+                    </div>
+                </div>
+
+                <div th:if="${param.success}" class="alert alert-success" style="margin-bottom:32px;">
+                    Petition adjudication recorded successfully.
+                </div>
+
+                <!-- Pending Allocations Table -->
+                <div class="table-card">
+                    <div class="table-header" style="padding:24px;border-bottom:1px solid var(--border);">
+                        <h3 style="font-size:14px;letter-spacing:0.1em;">PENDING ALLOCATION REQUESTS</h3>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Petition #</th>
+                                <th>Client</th>
+                                <th>Size Requested</th>
+                                <th>Assign Vault</th>
+                                <th>Operations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="req : ${requests}">
+                                <td th:text="${req.id}" style="font-family:var(--serif);"></td>
+                                <td>
+                                    <div style="font-weight:500;" th:text="${req.customer != null ? req.customer.name : '—'}"></div>
+                                    <div style="font-size:11px;color:var(--gold);letter-spacing:0.1em;" th:text="${req.customer != null ? req.customer.email : ''}"></div>
+                                </td>
+                                <td th:text="${req.requestedSize}"></td>
+                                <td>
+                                    <form th:action="@{/admin/approve-allocation}" method="post" style="display:flex;gap:12px;align-items:center;">
+                                        <input type="hidden" name="requestId" th:value="${req.id}">
+                                        <select name="lockerId" class="form-control" style="padding:8px;font-size:12px;" required>
+                                            <option value="" disabled selected>Select vault</option>
+                                            <option th:each="l : ${lockers}" 
+                                                    th:if="${l.status != null and l.status.name() == 'AVAILABLE'}" 
+                                                    th:value="${l.id}" 
+                                                    th:text="|${l.lockerNumber} (${l.branch})|"></option>
+                                        </select>
+                                        <button type="submit" class="btn btn-primary" style="padding:8px 16px;font-size:11px;white-space:nowrap;">Assign &amp; Approve</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <a th:href="@{/admin/allocation-requests}" class="auth-link" style="font-size:11px;text-transform:uppercase;color:var(--text-secondary);">Skip</a>
+                                </td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(requests)}">
+                                <td colspan="5" style="text-align:center;color:var(--text-secondary);padding:80px;">No pending allocation petitions.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

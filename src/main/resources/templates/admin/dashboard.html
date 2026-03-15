@@ -18,6 +18,7 @@
                 <a th:href="@{/admin/dashboard}" class="nav-link active">Intelligence</a>
                 <a th:href="@{/admin/manage-lockers}" class="nav-link">Locker Registry</a>
                 <a th:href="@{/admin/manage-officers}" class="nav-link">Officer Command</a>
+                <a th:href="@{/admin/manage-admins}" class="nav-link">Admin Directory</a>
                 <a th:href="@{/admin/allocation-requests}" class="nav-link">Access Petitions</a>
                 <a th:href="@{/admin/audit-logs}" class="nav-link">Heritage Logs</a>
             </nav>
@@ -66,6 +67,11 @@
                         <div class="stat-label">Security Force</div>
                         <div class="stat-value" th:text="${totalOfficers}">0</div>
                         <p style="font-size: 11px; color: var(--gold); margin-top: 12px; letter-spacing: 0.1em;">ACTIVE OFFICERS</p>
+                    </div>
+                    <div class="stat-card hover-lift">
+                        <div class="stat-label">Heritage Overseers</div>
+                        <div class="stat-value" th:text="${totalAdmins}">0</div>
+                        <p style="font-size: 11px; color: var(--gold); margin-top: 12px; letter-spacing: 0.1em;">TOTAL ADMINS</p>
                     </div>
                     <div class="stat-card hover-lift">
                         <div class="stat-label">Petitions Pending</div>

@@ -21,7 +21,7 @@ public class AdminController {
     private final LockerService lockerService;
     private final AccessRequestService accessRequestService;
     private final CustomerRepository customerRepository;
-    private final OfficerManagementService officerManagementService;
+    private final AdminManagementService adminManagementService;
 
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
@@ -30,6 +30,7 @@ public class AdminController {
         model.addAttribute("totalLockers", lockerService.getTotalLockerCount());
         model.addAttribute("availableLockers", lockerService.getAvailableLockerCount());
         model.addAttribute("totalOfficers", officerManagementService.getTotalOfficerCount());
+        model.addAttribute("totalAdmins", adminManagementService.getAllAdmins().size());
         model.addAttribute("totalCustomers", customerRepository.count());
         model.addAttribute("pendingRequestsCount", lockerService.getPendingAllocations().size());
         
@@ -143,5 +144,36 @@ public class AdminController {
             lockerService.assignLocker(lockerId, customer)
         );
         return "redirect:/admin/manage-lockers?success=granted";
+    }
+
+    // ========== Admin Management ========== //
+    @GetMapping("/manage-admins")
+    public String manageAdmins(Model model) {
+        model.addAttribute("admins", adminManagementService.getAllAdmins());
+        return "admin/manage-admins";
+    }
+
+    @PostMapping("/manage-admins/add")
+    public String addAdmin(
+            @RequestParam String name,
+            @RequestParam String email,
+            @RequestParam String username,
+            @RequestParam String password) {
+        try {
+            adminManagementService.createAdmin(name, email, username, password);
+            return "redirect:/admin/manage-admins?success=added";
+        } catch (RuntimeException e) {
+            return "redirect:/admin/manage-admins?error=" + e.getMessage();
+        }
+    }
+
+    @PostMapping("/manage-admins/delete")
+    public String removeAdmin(@RequestParam Long id, org.springframework.security.core.Authentication auth) {
+        try {
+            adminManagementService.removeAdmin(id, auth.getName());
+            return "redirect:/admin/manage-admins?success=removed";
+        } catch (RuntimeException e) {
+            return "redirect:/admin/manage-admins?error=" + e.getMessage();
+        }
     }
 }

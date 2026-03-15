@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Officer Command | Safeguard Heritage</title>
+    <title>Admin Directory | Safeguard Heritage</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
@@ -17,8 +17,8 @@
             <nav class="sidebar-nav">
                 <a th:href="@{/admin/dashboard}" class="nav-link">Intelligence</a>
                 <a th:href="@{/admin/manage-lockers}" class="nav-link">Locker Registry</a>
-                <a th:href="@{/admin/manage-officers}" class="nav-link active">Officer Command</a>
-                <a th:href="@{/admin/manage-admins}" class="nav-link">Admin Directory</a>
+                <a th:href="@{/admin/manage-officers}" class="nav-link">Officer Command</a>
+                <a th:href="@{/admin/manage-admins}" class="nav-link active">Admin Directory</a>
                 <a th:href="@{/admin/allocation-requests}" class="nav-link">Access Petitions</a>
                 <a th:href="@{/admin/audit-logs}" class="nav-link">Heritage Logs</a>
             </nav>
@@ -36,7 +36,7 @@
         <div class="main-content fade-in">
             <header class="top-bar">
                 <div class="breadcrumb" style="font-size: 11px; letter-spacing: 0.1em; color: var(--gold);">
-                    ADMINISTRATION / <span style="color: var(--text);">OFFICER COMMAND</span>
+                    ADMINISTRATION / <span style="color: var(--text);">ADMIN DIRECTORY</span>
                 </div>
                 <div class="user-profile">
                     <span class="script-font" style="font-size: 24px;">Administrator</span>
@@ -46,82 +46,71 @@
             <main class="content-body">
                 <div class="page-header">
                     <div>
-                        <h2>Force Management</h2>
-                        <p style="color: var(--text-secondary); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;">Commission and assign station officers.</p>
+                        <h2>Hierarchy Management</h2>
+                        <p style="color: var(--text-secondary); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;">Elevate personnel to administrative standing.</p>
                     </div>
                 </div>
 
                 <div th:if="${param.success}" class="alert alert-success" style="margin-bottom: 40px; border-color: var(--success); color: var(--success);">
-                    Force directive processed successfully.
+                    Administrative records updated successfully.
                 </div>
 
                 <div th:if="${param.error}" class="alert alert-error" style="margin-bottom: 40px; border-color: var(--error); color: var(--error); padding: 15px; border: 1px solid var(--error); background: rgba(239, 68, 68, 0.1);">
-                    <span th:text="${param.error}">Error processing directive.</span>
+                    <span th:text="${param.error}">Error modifying hierarchy.</span>
                 </div>
 
                 <div class="stats-grid" style="grid-template-columns: 1fr 2fr; align-items: start;">
                     <!-- Actions -->
                     <div style="display: flex; flex-direction: column; gap: 40px;">
                         <div class="stat-card hover-lift" style="padding: 40px; text-align: left;">
-                            <h3 style="font-size: 14px; color: var(--gold); margin-bottom: 30px; letter-spacing: 0.1em;">COMMISSION OFFICER</h3>
-                            <form th:action="@{/admin/manage-officers/add}" method="post">
+                            <h3 style="font-size: 14px; color: var(--gold); margin-bottom: 30px; letter-spacing: 0.1em;">ELEVATE ADMINISTRATOR</h3>
+                            <form th:action="@{/admin/manage-admins/add}" method="post">
                                 <div class="form-group">
                                     <label class="form-label">Full Name</label>
-                                    <input type="text" name="name" class="form-control" required placeholder="Robert Heritage" />
+                                    <input type="text" name="name" class="form-control" required placeholder="Marcus Aurelius" />
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Email Address</label>
-                                    <input type="email" name="email" class="form-control" required placeholder="officer@safeguard.com" />
+                                    <input type="email" name="email" class="form-control" required placeholder="admin@safeguard.com" />
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Username</label>
-                                    <input type="text" name="username" class="form-control" required placeholder="rheritage" />
+                                    <input type="text" name="username" class="form-control" required placeholder="maurelius" />
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Station Branch</label>
-                                    <input type="text" name="branch" class="form-control" required placeholder="North Plaza Station" />
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Initial Passphrase</label>
+                                    <label class="form-label">Secure Passphrase</label>
                                     <input type="password" name="password" class="form-control" required placeholder="••••••••" />
                                 </div>
-                                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Commission Officer</button>
+                                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Elevate Admin</button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Officers Table -->
+                    <!-- Admins Table -->
                     <div class="table-card" style="margin-left: 40px;">
                         <div class="table-header" style="padding: 24px; border-bottom: 1px solid var(--border);">
-                            <h3 style="font-size: 14px; letter-spacing: 0.1em;">ACTIVE SECURITY FORCE</h3>
+                            <h3 style="font-size: 14px; letter-spacing: 0.1em;">CURRENT ADMINISTRATORS</h3>
                         </div>
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Officer</th>
+                                    <th>Administrator</th>
                                     <th>Identity</th>
-                                    <th>Station Station</th>
-                                    <th>Status</th>
+                                    <th>Enthroned At</th>
                                     <th>Operations</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr th:each="o : ${officers}">
-                                    <td><strong th:text="${o.name}" style="font-family: var(--serif);"></strong></td>
-                                    <td th:text="${o.username}" style="color: var(--gold); font-size: 12px; letter-spacing: 0.1em;"></td>
-                                    <td th:text="${o.branch}"></td>
+                                <tr th:each="a : ${admins}">
+                                    <td><strong th:text="${a.name}" style="font-family: var(--serif);"></strong></td>
+                                    <td th:text="${a.username}" style="color: var(--gold); font-size: 12px; letter-spacing: 0.1em;"></td>
+                                    <td th:text="${#temporals.format(a.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
                                     <td>
-                                        <span class="badge badge-success">ACTIVE</span>
-                                    </td>
-                                    <td>
-                                        <form th:action="@{/admin/manage-officers/delete}" method="post" onsubmit="return confirm('Dismiss this officer from heritage service?');">
-                                            <input type="hidden" name="id" th:value="${o.id}">
-                                            <button type="submit" class="auth-link" style="border: none; background: none; font-size: 11px; text-transform: uppercase; cursor: pointer; color: var(--error);">Dismiss</button>
+                                        <form th:action="@{/admin/manage-admins/delete}" method="post" onsubmit="return confirm('Revoke administrative standing?');">
+                                            <input type="hidden" name="id" th:value="${a.id}">
+                                            <button type="submit" class="auth-link" style="border: none; background: none; font-size: 11px; text-transform: uppercase; cursor: pointer; color: var(--error);">Revoke</button>
                                         </form>
                                     </td>
-                                </tr>
-                                <tr th:if="${#lists.isEmpty(officers)}">
-                                    <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 60px;">No officers currently commissioned in the heritage force.</td>
                                 </tr>
                             </tbody>
                         </table>
